@@ -2460,11 +2460,12 @@ button {
     border-radius: 20px;
   }
 
-  /* The map is the page: edge to edge between the two bars (but clear of a notch). */
-  .panel:has(.mapwrap) {
-    margin: 0 var(--safe-right) 0 var(--safe-left);
-    padding: 0;
-    border-radius: 0;
+  /* The map is the page: edge to edge between the two bars (but clear of a
+     notch). It reaches over the panel's padding and margin by itself — a
+     rule on the panel asking whether a map is inside would still match after
+     leaving, since Next keeps visited pages in the document, hidden. */
+  .map-page {
+    margin: -20px -24px -44px;
   }
 
   .map-head {
@@ -2506,7 +2507,8 @@ button {
   /* A listing trades the tabs for its own bar: price and the way to the seller. */
   .detail-bar {
     position: fixed;
-    z-index: 50;
+    /* over the tabs, covering them; not hiding them, for the same reason as the map */
+    z-index: 55;
     left: 0;
     right: 0;
     bottom: 0;
@@ -2552,10 +2554,6 @@ button {
   .detail-bar .btn-solid {
     flex-shrink: 0;
     padding: 12px 20px;
-  }
-
-  body:has(.detail-bar) .side-nav {
-    display: none;
   }
 
   .page-head {
