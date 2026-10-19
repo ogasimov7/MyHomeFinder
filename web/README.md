@@ -47,8 +47,9 @@ mənbə linki gəlir. Kartdan açılan link axtarış parametrlərini daşıyır
 müqayisə olunur və faiz kartdakı ilə eyni çıxır. Elan o axtarışda yoxdursa, öz rayonunun elanları ilə
 sıralanır.
 
-**Nişanlar** (`lib/value.ts`): eyni yerdəki elanlar arasında m²-i ən ucuz olan “Ən sərfəli”, digərləri
-“X% baha” (o ən sərfəliyə nisbətən) alır; tək elana nişan qoyulmur. Kartlarda qrup — axtarışdakı eyni yerin
+**Nişanlar** (`lib/value.ts`): eyni yerdəki elanların orta m² qiyməti tapılır. m²-i ən ucuz olan
+“Ən sərfəli”, ortadan ucuz olanlar “Sərfəli təklif” (faizsiz — satıcıya qaldırmaq üçün rəqəm verilmir), ortadan
+baha olanlar “X% baha” (ortaya nisbətən; 1%-dən az fərq “Orta qiymətdə”) alır; tək elana nişan qoyulmur. Kartlarda qrup — axtarışdakı eyni yerin
 elanları, xəritədə — kliklənən dairənin **bütün** elanları. bina.az dairəni 25-25 və yalnız verilən sərhəd daxilində
 verir, kursoru isə sadəcə zaman nöqtəsidir: dairə öz plitəsinin sərhədləri ilə soruşulur (ekranın kənarında
 kəsilməsin deyə) və zaman aralıqlarına bölünüb paralel oxunur (eyni anda ən çox 12 sorğu; 1 500 elan ≈ 1,5 s,

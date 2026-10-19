@@ -28,8 +28,8 @@ export function ListingCard({ row, value, qs = "" }: { row: MarketRow; value?: V
   const standing =
     value?.kind === "best"
       ? `${listing.areaName}: bu axtarışdakı ${value.size} elan arasında m²-i ən ucuz`
-      : value?.kind === "dearer"
-        ? `${listing.areaName} üzrə ən sərfəli: ${perSqm(value.bestPerSqm)} · ${value.size} elan`
+      : value?.kind === "good" || value?.kind === "dearer"
+        ? `${listing.areaName} ortası: ${perSqm(value.average)} · ${value.size} elan`
         : value
           ? `${listing.areaName}: bu axtarışda müqayisə üçün başqa elan yoxdur`
           : null;

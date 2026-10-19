@@ -120,8 +120,7 @@ async function Stats() {
   const byId = placeValues(market.rows);
   const values = Object.values(byId);
   const best = values.filter((v) => v.kind === "best").length;
-  const premiums = values.flatMap((v) => (v.kind === "dearer" ? [v.premiumPct] : [])).sort((a, b) => a - b);
-  const typical = premiums.length ? premiums[Math.floor(premiums.length / 2)] : null;
+  const good = values.filter((v) => v.kind === "good").length;
   // Places with at least two listings: the only ones a comparison was made in.
   const compared = new Set(market.rows.filter((r) => byId[r.listing.id].kind !== "none").map((r) => r.listing.areaId)).size;
   return (
@@ -139,8 +138,8 @@ async function Stats() {
         <span>öz ərazisinin ən sərfəlisi</span>
       </div>
       <div>
-        <b>{typical !== null ? `${Math.round(typical)}%` : "—"}</b>
-        <span>digərləri ən sərfəlidən tipik olaraq baha</span>
+        <b>{good}</b>
+        <span>öz ərazisinin ortasından ucuz</span>
       </div>
     </section>
   );

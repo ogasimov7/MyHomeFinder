@@ -17,7 +17,7 @@ const STEPS = [
   {
     n: "03",
     title: "Hər yerin ən sərfəlisi nişan alır",
-    body: "Eyni yerdəki elanlar arasında m²-i ən ucuz olan “Ən sərfəli” nişanı alır və siyahıda yuxarı çıxır; digərlərində ondan neçə faiz baha olduğu yazılır. Xəritədə qrup seçdiyiniz dairənin bütün elanlarıdır; panel onların orta m² qiymətini də göstərir. Yerdə tək elan varsa nişan qoyulmur — müqayisə edəcək bir şey yoxdur.",
+    body: "Eyni yerdəki elanların orta m² qiyməti tapılır. m²-i ən ucuz olan “Ən sərfəli” nişanı alır və siyahıda yuxarı çıxır; ortadan ucuz olanlar “Sərfəli təklif”, ortadan baha olanlar isə ortadan neçə faiz baha olduğunu göstərir. Xəritədə qrup seçdiyiniz dairənin bütün elanlarıdır; panel onların orta m² qiymətini də göstərir. Yerdə tək elan varsa nişan qoyulmur — müqayisə edəcək bir şey yoxdur.",
   },
 ];
 

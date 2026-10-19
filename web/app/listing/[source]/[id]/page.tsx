@@ -115,9 +115,6 @@ async function ListingView({ params, searchParams }: Props) {
   const group = listing ? (peers.some((l) => l.id === listing.id) ? peers : [...peers, listing]) : [];
   const value: Value | null = listing && market ? placeValues(group.map((l) => ({ listing: l })))[listing.id] : null;
   const badge = value ? valueLabel(value) : null;
-  const cheapestOther = listing
-    ? Math.min(...group.filter((l) => l.id !== listing.id).map((l) => l.pricePerSqm), Infinity)
-    : Infinity;
   const price = listing?.price ?? detail.price;
   const title = heading(detail, listing);
   const place = listing
@@ -272,7 +269,7 @@ async function ListingView({ params, searchParams }: Props) {
           <section className="box value">
             <h2 className="box-title">HomeFinder qiymətləndirməsi</h2>
             {listing && value ? (
-              <Valuation listing={listing} value={value} next={Number.isFinite(cheapestOther) ? cheapestOther : null} />
+              <Valuation listing={listing} value={value} />
             ) : (
               <p className="box-note">
                 {listing
@@ -354,7 +351,7 @@ async function ListingView({ params, searchParams }: Props) {
   );
 }
 
-function Valuation({ listing, value, next }: { listing: Listing; value: Value; next: number | null }) {
+function Valuation({ listing, value }: { listing: Listing; value: Value }) {
   if (value.kind === "none") {
     return (
       <p className="box-note">
@@ -362,31 +359,28 @@ function Valuation({ listing, value, next }: { listing: Listing; value: Value; n
       </p>
     );
   }
-  const other = value.kind === "best" ? next : value.bestPerSqm;
-  const max = Math.max(listing.pricePerSqm, other ?? 0);
-  const tone = value.kind === "best" ? "best" : "dearer";
+  const tone = valueLabel(value)!.tone;
+  const bars: [string, number, string][] = [
+    ["Bu elan", listing.pricePerSqm, `bar tone-${tone}`],
+    [`${listing.areaName} ortası`, value.average, "bar"],
+  ];
+  if (value.kind !== "best") bars.push(["Ən sərfəli", value.bestPerSqm, "bar"]);
+  const max = Math.max(...bars.map(([, v]) => v));
   return (
     <>
       <p className={`value-verdict tone-${tone}`}>{valueLabel(value)?.label}</p>
       <div className="bars">
-        <div>
-          <span>Bu elan</span>
-          <i className={`bar tone-${tone}`} style={{ width: `${(listing.pricePerSqm / max) * 100}%` }} />
-          <b>{perSqm(listing.pricePerSqm)}</b>
-        </div>
-        {other !== null && (
-          <div>
-            <span>{value.kind === "best" ? "Növbəti ən ucuz" : `Ən sərfəli · ${listing.areaName}`}</span>
-            <i className="bar" style={{ width: `${(other / max) * 100}%` }} />
-            <b>{perSqm(other)}</b>
+        {bars.map(([label, v, cls]) => (
+          <div key={label}>
+            <span>{label}</span>
+            <i className={cls} style={{ width: `${(v / max) * 100}%` }} />
+            <b>{perSqm(v)}</b>
           </div>
-        )}
+        ))}
       </div>
       <p className="box-note">
-        {listing.areaName} üzrə bu axtarışdakı {value.size} elan arasında, m² qiymətinə görə.
-        {value.kind === "best" && other !== null
-          ? ` Növbəti elan ${Math.max(1, Math.round(((other - listing.pricePerSqm) / listing.pricePerSqm) * 100))}% bahadır.`
-          : ""}
+        {listing.areaName} üzrə bu axtarışdakı {value.size} elan arasında, m² qiymətinə görə: ən ucuzu “Ən sərfəli”,
+        ortadan ucuzlar “Sərfəli təklif”, ortadan bahalar ortaya nisbətən neçə faiz baha olduğu ilə.
       </p>
     </>
   );
