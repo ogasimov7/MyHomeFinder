@@ -13,7 +13,7 @@ import "leaflet/dist/leaflet.css";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
-import { money } from "../../src/lib/format";
+import { money, perSqm } from "../../src/lib/format";
 import type { ClusterItem, ClusterPage, Marker, Preview } from "@/lib/map";
 import { valueLabel, type Value } from "@/lib/value";
 import type { Category } from "@/lib/query";
@@ -50,6 +50,7 @@ type ClusterSelection = {
   /** false when the circle held more than could be read and compared */
   complete: boolean;
   failed: boolean;
+  average: ClusterPage["average"];
 };
 
 type Selection = { kind: "item"; id: string; item: Preview | null } | ClusterSelection;
@@ -121,6 +122,7 @@ export function MapView() {
       total: null,
       complete: true,
       failed: false,
+      average: null,
     });
     const point = m.latLngToContainerPoint([marker.lat, marker.lng]);
     const size = m.getSize();
@@ -136,7 +138,7 @@ export function MapView() {
       const res = await fetch(`/api/map/cluster?${query}`);
       if (!res.ok) throw new Error(String(res.status));
       const page = (await res.json()) as ClusterPage;
-      update({ items: page.items, total: page.total, complete: page.complete });
+      update({ items: page.items, total: page.total, complete: page.complete, average: page.average });
     } catch {
       update({ items: [], failed: true });
     }
@@ -377,13 +379,20 @@ function ItemCard({ selection, onClose }: { selection: Extract<Selection, { kind
 }
 
 function ClusterPanel({ selection, onClose }: { selection: ClusterSelection; onClose: () => void }) {
-  const { items, total, complete, failed, building, count } = selection;
+  const { items, total, complete, failed, building, count, average } = selection;
   return (
     <aside className="map-panel" aria-label="Seçilmiş nöqtədəki elanlar">
       <header className="map-panel-head">
         <div>
           <h2>{grouped(total ?? count)} elan</h2>
           <p>{building ? "Bu binada satışda olanlar" : "Seçdiyiniz dairədəki elanlar"} · m²-ə görə ən sərfəli yuxarıda</p>
+          {average && (
+            <p className="avg-stat">
+              <span>{building ? "Binada" : "Dairədə"} orta m² qiyməti</span>
+              <b>{perSqm(average.perSqm)}</b>
+              <small>{complete ? `${average.count} elan üzrə` : `ilk ${average.count} elan üzrə`}</small>
+            </p>
+          )}
         </div>
         <button type="button" className="map-card-close" onClick={onClose} aria-label="Bağla">
           <CloseIcon size={16} />

@@ -8,6 +8,8 @@ import { PendingFrame, SearchProvider } from "@/components/SearchState";
 import { CardSkeletons, FiltersSkeleton } from "@/components/Skeletons";
 import { getMarket } from "@/lib/market";
 import { marketKey, parseQuery, queryString } from "@/lib/query";
+import { perSqm } from "../../../src/lib/format";
+import { meanPerSqm } from "@/lib/value";
 import { view } from "@/lib/view";
 
 export const metadata: Metadata = { title: "Axtarış" };
@@ -56,6 +58,8 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
   const { rows, values } = view(market, query);
   const site = market.source === "bina" ? "bina.az" : "kub.az";
   const qs = queryString(query);
+  // Over exactly the listings shown: every filter, district and text applied.
+  const average = meanPerSqm(rows.map((r) => r.listing.pricePerSqm));
 
   return (
     <PendingFrame>
@@ -69,6 +73,13 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
               </span>
             )}
           </p>
+          {average && (
+            <p className="avg-stat">
+              <span>Nəticələrin orta m² qiyməti</span>
+              <b>{perSqm(average.perSqm)}</b>
+              <small>{average.count} elan üzrə</small>
+            </p>
+          )}
           <p className="results-coverage">
             {market.coverage.join(" · ")} · {TIME.format(new Date(market.at))}-da yeniləndi
           </p>

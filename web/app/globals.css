@@ -572,6 +572,35 @@ button {
   font-size: 14px;
 }
 
+/* The mean price per m² of what is on screen: the search's, or a map circle's. */
+.avg-stat {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 10px 0 8px;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
+.avg-stat span {
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+
+.avg-stat b {
+  font-family: var(--font-head);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.avg-stat small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
 .results-count b {
   color: var(--ink);
   font-size: 16px;
@@ -2467,18 +2496,24 @@ button {
     min-height: calc(100dvh - var(--tabbar) - var(--safe-bottom));
   }
 
+  /* The logo bar stays where it is and the page slides up over it. The
+     aside itself steps out of the way (display: contents): a sticky box is a
+     layer of its own, and the tabs inside it would sink under the page with
+     it. The logo alone is sticky; the panel is positioned and comes later,
+     so it paints above; the fixed tabs keep their own place on top. Neither
+     the logo nor the panel sets a z-index, which would trap the fixed
+     filters and listing bar inside a layer as well. */
   .side {
-    position: sticky;
-    z-index: 20;
-    height: var(--topbar);
-    flex-direction: row;
-    align-items: center;
-    padding: 0 calc(16px + var(--safe-right)) 0 calc(16px + var(--safe-left));
-    /* solid, not blurred: a filter here would trap the fixed tab bar inside it */
-    background: var(--bg);
+    display: contents;
   }
 
   .logo {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: var(--topbar);
+    padding: 0 calc(16px + var(--safe-right)) 0 calc(16px + var(--safe-left));
+    background: var(--bg);
     font-size: 20px;
   }
 
@@ -2547,6 +2582,7 @@ button {
   }
 
   .panel {
+    position: relative;
     margin: 0 calc(8px + var(--safe-right)) 8px calc(8px + var(--safe-left));
     padding: 20px 16px 36px;
     border-radius: 20px;

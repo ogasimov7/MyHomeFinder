@@ -12,7 +12,7 @@ import "server-only";
 import { cacheLife } from "next/cache";
 import { BINA_CATEGORY, TIMEOUT_MS, USER_AGENT } from "./market";
 import type { Category } from "./query";
-import { bestValue, byValue, manatPerSqm, type Value } from "./value";
+import { bestValue, byValue, manatPerSqm, meanPerSqm, type Value } from "./value";
 
 /** bina.az does not split markers any further than this. */
 export const MAX_DATA_ZOOM = 18;
@@ -137,6 +137,8 @@ export interface ClusterPage {
   total: number;
   /** false when the cluster was larger than could be read whole */
   complete: boolean;
+  /** mean price per m² of the listings read, in manat */
+  average: { perSqm: number; count: number } | null;
 }
 
 /** bina.az serves 25 per page; four pages is as far as one click reads. */
@@ -175,12 +177,13 @@ export async function getCluster(category: Category, bounds: Bounds, clusterId: 
   }
 
   // The whole circle is one group: one listing in it is the best value.
-  const values = bestValue(items, () => clusterId, (i) => manatPerSqm(i.price, i.currency, i.area));
+  const sqm = (i: Preview) => manatPerSqm(i.price, i.currency, i.area);
+  const values = bestValue(items, () => clusterId, sqm);
   const ranked = items
     .map((item, order) => ({ ...item, value: values.get(item)!, order }))
     .sort((a, b) => byValue(a.value, b.value) || a.order - b.order)
     .map(({ order: _order, ...item }) => item);
-  return { items: ranked, total, complete: !more };
+  return { items: ranked, total, complete: !more, average: meanPerSqm(items.map(sqm)) };
 }
 
 /* ---------------- request parsing ---------------- */

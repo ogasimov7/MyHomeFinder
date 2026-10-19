@@ -70,3 +70,11 @@ export function manatPerSqm(price: number, currency: string, area: number | null
   const azn = currency === "USD" ? price * USD_AZN : currency === "AZN" ? price : null;
   return azn === null ? null : azn / area;
 }
+
+/** The plain mean of the prices per m² that can be read, and how many went
+    into it; null when none can. */
+export function meanPerSqm(values: (number | null | undefined)[]): { perSqm: number; count: number } | null {
+  const known = values.filter((v): v is number => typeof v === "number" && Number.isFinite(v) && v > 0);
+  if (!known.length) return null;
+  return { perSqm: known.reduce((sum, v) => sum + v, 0) / known.length, count: known.length };
+}
