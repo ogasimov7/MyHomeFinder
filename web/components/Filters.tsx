@@ -1,11 +1,23 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { fold } from "../../src/lib/geo";
 import { DISTRICTS } from "../../src/lib/geography";
-import { BUDGETS, DEFAULT_QUERY, ROOMS, SIZES, type Category } from "@/lib/query";
+import {
+  BUDGETS,
+  DEFAULT_QUERY,
+  MAX_PLACES,
+  PLACE_KINDS,
+  ROOMS,
+  SIZES,
+  placeLabel,
+  type Category,
+  type PlaceKind,
+  type PlaceOption,
+} from "@/lib/query";
 import { useTerms } from "@/lib/store";
 import { useSearch } from "./SearchState";
-import { BuildingIcon, CloseIcon, FilterIcon, HouseIcon, KeyIcon, SparkIcon } from "./icons";
+import { BuildingIcon, CloseIcon, FilterIcon, HouseIcon, KeyIcon, SearchIcon, SparkIcon } from "./icons";
 
 const CATEGORIES: { id: Category; label: string; icon: typeof BuildingIcon }[] = [
   { id: "flat", label: "Bütün mənzillər", icon: BuildingIcon },
@@ -38,14 +50,84 @@ function toggleIn(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value].sort();
 }
 
-export function Filters() {
+/* Metro stations, settlements and microdistricts: too many for one row of
+   chips, so they come in tabs with a box to type into. Typing looks across
+   all three; what is chosen stays on top whichever tab is open. */
+function PlacePicker({
+  places,
+  selected,
+  onChange,
+  disabled,
+}: {
+  places: PlaceOption[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+  disabled: boolean;
+}) {
+  const [kind, setKind] = useState<PlaceKind>("metro");
+  const [text, setText] = useState("");
+  const needle = fold(text.trim());
+  const chosen = selected.flatMap((id) => places.find((p) => p.id === id) ?? []);
+  const shown = needle
+    ? places.filter((p) => fold(p.name).includes(needle))
+    : places.filter((p) => p.kind === kind);
+  const full = selected.length >= MAX_PLACES;
+  const toggle = (id: string) =>
+    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : full ? selected : [...selected, id]);
+
+  if (!places.length) return <p className="place-empty">Ərazi siyahısı hazırda yüklənmədi.</p>;
+
+  return (
+    <div className={`place-picker${disabled ? " is-disabled" : ""}`}>
+      {chosen.length > 0 && (
+        <div className="chips place-chosen">
+          {chosen.map((p) => (
+            <Chip key={p.id} on onClick={() => toggle(p.id)} disabled={disabled}>
+              {placeLabel(p)} <CloseIcon size={12} />
+            </Chip>
+          ))}
+        </div>
+      )}
+      <label className="place-search">
+        <SearchIcon size={15} />
+        <input
+          type="search"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Metro, qəsəbə, mikrorayon…"
+          disabled={disabled}
+          aria-label="Ərazi axtar"
+        />
+      </label>
+      {!needle && (
+        <div className="seg seg-3">
+          {PLACE_KINDS.map((k) => (
+            <Chip key={k.id} on={kind === k.id} onClick={() => setKind(k.id)} disabled={disabled}>
+              {k.label}
+            </Chip>
+          ))}
+        </div>
+      )}
+      <div className="chips place-list">
+        {shown.map((p) => (
+          <Chip key={p.id} on={selected.includes(p.id)} onClick={() => toggle(p.id)} disabled={disabled || (full && !selected.includes(p.id))}>
+            {needle ? placeLabel(p) : p.name}
+          </Chip>
+        ))}
+        {shown.length === 0 && <p className="place-empty">“{text.trim()}” tapılmadı.</p>}
+      </div>
+    </div>
+  );
+}
+
+export function Filters({ places }: { places: PlaceOption[] }) {
   const { query, update, go } = useSearch();
   const { terms, setTerms } = useTerms();
   const [open, setOpen] = useState(false);
   const kub = query.source === "kub";
 
   const active =
-    query.rooms.length + query.districts.length +
+    query.rooms.length + query.districts.length + query.places.length +
     [query.budget, query.size, query.bill, query.repair, query.mortgage, query.best, query.category !== "flat"].filter(Boolean).length;
 
   return (
@@ -98,6 +180,10 @@ export function Filters() {
                 </button>
               ))}
             </div>
+          </Group>
+
+          <Group title="Ərazi" hint={kub ? "yalnız bina.az" : "metro, qəsəbə, mikrorayon"}>
+            <PlacePicker places={places} selected={query.places} onChange={(ids) => update({ places: ids })} disabled={kub} />
           </Group>
 
           <Group title="Rayon">

@@ -7,7 +7,8 @@ import { SearchBox, SortSelect } from "@/components/SearchBar";
 import { PendingFrame, SearchProvider } from "@/components/SearchState";
 import { CardSkeletons, FiltersSkeleton } from "@/components/Skeletons";
 import { getMarket } from "@/lib/market";
-import { marketKey, parseQuery, queryString } from "@/lib/query";
+import { getPlaceOptions } from "@/lib/places";
+import { marketKey, parseQuery, placeLabel, queryString } from "@/lib/query";
 import { perSqm } from "../../../src/lib/format";
 import { meanPerSqm } from "@/lib/value";
 import { view } from "@/lib/view";
@@ -25,7 +26,7 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
       </header>
       <div className="search-layout">
         <Suspense fallback={<FiltersSkeleton />}>
-          <Filters />
+          <SearchFilters />
         </Suspense>
         <section className="results" aria-label="Nəticələr">
           <Suspense fallback={<CardSkeletons />}>
@@ -35,6 +36,12 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
       </div>
     </SearchProvider>
   );
+}
+
+/** The filters, with the places bina.az lists; without them if it does not answer. */
+async function SearchFilters() {
+  const places = await getPlaceOptions().catch(() => []);
+  return <Filters places={places} />;
 }
 
 const TIME = new Intl.DateTimeFormat("az", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Baku" });
@@ -58,6 +65,9 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
   const { rows, values } = view(market, query);
   const site = market.source === "bina" ? "bina.az" : "kub.az";
   const qs = queryString(query);
+  const chosen = query.places.length && market.source === "bina"
+    ? (await getPlaceOptions().catch(() => [])).filter((p) => query.places.includes(p.id)).map(placeLabel)
+    : [];
   // Over exactly the listings shown: every filter, district and text applied.
   const average = meanPerSqm(rows.map((r) => r.listing.pricePerSqm));
 
@@ -73,6 +83,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
               </span>
             )}
           </p>
+          {chosen.length > 0 && <p className="results-places">Ərazi: {chosen.join(", ")}</p>}
           {average && (
             <p className="avg-stat">
               Orta m² qiyməti <b>{perSqm(average.perSqm)}</b>

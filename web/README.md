@@ -24,7 +24,10 @@ npm run build
 ## Məlumat necə gəlir
 
 - **bina.az**: saytın öz axtarış səhifəsinin işlətdiyi GraphQL sorğusu (`/graphql`, `SearchItems`).
-  Filtrlər (kateqoriya, otaq, büdcə, sahə, kupça, təmir, ipoteka) sorğuya gedir; 12 × 25 = 300 elan oxunur.
+  Filtrlər (kateqoriya, ərazi, otaq, büdcə, sahə, kupça, təmir, ipoteka) sorğuya gedir; 12 × 25 = 300 elan oxunur.
+  **Ərazi** — bina.az-ın öz yer kataloqu (`lib/places.ts`, gündə bir dəfə oxunur): metro stansiyaları, qəsəbələr və
+  qəsəbələr arasında verilən nömrəli mikrorayonlar; seçilənlər `locationIds` kimi sorğuya gedir (`?place=8,126`,
+  20-dək). bina.az bir elanı bir neçə yerə bağlayır, kartda isə əsas yeri görünür.
 - **kub.az**: axtarış səhifəsinin HTML-i (15 səhifə, 5-5 paralel, ~300 elan). kub.az URL filtrlərini qəbul etmir, ona görə
   otaq, büdcə və sahə filtrləri sıralamadan **sonra** tətbiq olunur.
 - **Müqayisə vahidi rayon deyil, elanın öz yeridir**: metro stansiyası, qəsəbə, mikrorayon (“28 May m.”,

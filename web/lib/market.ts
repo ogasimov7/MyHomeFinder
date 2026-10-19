@@ -124,6 +124,7 @@ function binaFilter(key: MarketKey) {
     cityId: "1",
     leased: false,
     categoryId: BINA_CATEGORY[key.category],
+    locationIds: key.places.length ? key.places : undefined,
     roomIds: key.rooms.length ? key.rooms : undefined,
     priceFrom: price.from,
     priceTo: price.to,

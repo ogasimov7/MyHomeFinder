@@ -418,6 +418,70 @@ button {
   gap: 6px;
 }
 
+.seg-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.seg-3 .chip {
+  padding: 8px 6px;
+  font-size: 13px;
+}
+
+/* metro, settlements, microdistricts */
+.place-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.place-picker.is-disabled {
+  opacity: 0.55;
+}
+
+.place-chosen .chip {
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  font-size: 13px;
+}
+
+.place-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--faint);
+}
+
+.place-search input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.place-list {
+  max-height: 196px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 0;
+}
+
+.place-list .chip {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.place-empty {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .tiles {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -570,6 +634,13 @@ button {
 .results-count {
   color: var(--muted);
   font-size: 14px;
+}
+
+.results-places {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 500;
 }
 
 /* The mean price per m² of what is on screen: the search's, or a map circle's. */

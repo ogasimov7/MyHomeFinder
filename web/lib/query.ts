@@ -19,6 +19,8 @@ export interface Query {
   size: string | null;
   /** district ids from the shared geography */
   districts: string[];
+  /** bina.az location ids — metro stations, settlements, microdistricts */
+  places: string[];
   /** bina.az only: the documents a listing must have */
   bill: boolean;
   repair: boolean;
@@ -31,6 +33,35 @@ export interface Query {
 }
 
 export const ROOMS = ["1", "2", "3", "4", "5+"] as const;
+
+/** How many places one search may ask for at once. */
+export const MAX_PLACES = 20;
+
+/* The finer places a search can be narrowed to, as bina.az files its
+   listings: metro stations, settlements, and the numbered microdistricts it
+   lists among the settlements. */
+export type PlaceKind = "metro" | "settlement" | "micro";
+
+export interface PlaceOption {
+  /** bina.az location id */
+  id: string;
+  name: string;
+  kind: PlaceKind;
+  /** the district a settlement belongs to, when bina.az says */
+  district: string | null;
+}
+
+export const PLACE_KINDS: { id: PlaceKind; label: string; suffix: string }[] = [
+  { id: "metro", label: "Metro", suffix: "m." },
+  { id: "settlement", label: "Qəsəbə", suffix: "q." },
+  { id: "micro", label: "Mikrorayon", suffix: "" },
+];
+
+/** "28 May m.", "Badamdar q.", "4-cü mikrorayon" */
+export function placeLabel(place: PlaceOption): string {
+  const suffix = PLACE_KINDS.find((k) => k.id === place.kind)!.suffix;
+  return suffix ? `${place.name} ${suffix}` : place.name;
+}
 
 /* Ranges are offered as a handful of steps rather than free inputs: they read
    faster and every one is a link someone can share. */
@@ -63,6 +94,7 @@ export const DEFAULT_QUERY: Query = {
   budget: null,
   size: null,
   districts: [],
+  places: [],
   bill: false,
   repair: false,
   mortgage: false,
@@ -99,6 +131,7 @@ export function parseQuery(params: Params | URLSearchParams): Query {
     budget: BUDGETS.some((b) => b.id === get("budget")) ? get("budget")! : null,
     size: SIZES.some((s) => s.id === get("size")) ? get("size")! : null,
     districts: getList("district").sort(),
+    places: [...new Set(getList("place").filter((id) => /^\d{1,6}$/.test(id)))].sort((a, b) => Number(a) - Number(b)).slice(0, MAX_PLACES),
     bill: get("bill") === "1",
     repair: get("repair") === "1",
     mortgage: get("mortgage") === "1",
@@ -118,6 +151,7 @@ export function queryString(query: Query): string {
   if (query.budget) p.set("budget", query.budget);
   if (query.size) p.set("size", query.size);
   if (query.districts.length) p.set("district", query.districts.join(","));
+  if (query.places.length) p.set("place", query.places.join(","));
   if (query.bill) p.set("bill", "1");
   if (query.repair) p.set("repair", "1");
   if (query.mortgage) p.set("mortgage", "1");
@@ -138,10 +172,13 @@ export function range<T extends { id: string; from?: number; to?: number }>(
 
 /* What decides which listings are fetched and ranked. Everything else —
    districts, the text box, the order — only narrows or reorders that one
-   ranked page, so changing it never re-reads the site. */
+   ranked page, so changing it never re-reads the site. Places are asked of
+   the site itself: 300 listings of 28 May, not the few of the latest 300
+   that happen to be there. */
 export interface MarketKey {
   source: Source;
   category: Category;
+  places: string[];
   rooms: string[];
   budget: string | null;
   size: string | null;
@@ -151,11 +188,11 @@ export interface MarketKey {
 }
 
 export function marketKey(query: Query): MarketKey {
-  const { source, category, rooms, budget, size, bill, repair, mortgage } = query;
+  const { source, category, places, rooms, budget, size, bill, repair, mortgage } = query;
   // kub.az is read whole and narrowed afterwards, so one page serves every
   // filter on it — and is fetched once, not once per filter.
   if (source === "kub") {
-    return { source, category, rooms: [], budget: null, size: null, bill: false, repair: false, mortgage: false };
+    return { source, category, places: [], rooms: [], budget: null, size: null, bill: false, repair: false, mortgage: false };
   }
-  return { source, category, rooms, budget, size, bill, repair, mortgage };
+  return { source, category, places, rooms, budget, size, bill, repair, mortgage };
 }
