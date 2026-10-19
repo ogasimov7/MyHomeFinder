@@ -1008,12 +1008,6 @@ button {
   color: var(--faint);
 }
 
-.card-monthly {
-  margin-left: auto;
-  color: var(--ink-2);
-  font-weight: 500;
-}
-
 .card-ref {
   padding-top: 8px;
   border-top: 1px dashed var(--line);

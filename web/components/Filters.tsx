@@ -12,7 +12,6 @@ import {
   type Category,
   type PlaceOption,
 } from "@/lib/query";
-import { useTerms } from "@/lib/store";
 import { useSearch } from "./SearchState";
 import { BuildingIcon, CheckIcon, CloseIcon, FilterIcon, HouseIcon, KeyIcon, SparkIcon } from "./icons";
 
@@ -148,7 +147,6 @@ function DistrictPicker({
 
 export function Filters({ places }: { places: PlaceOption[] }) {
   const { query, update, go } = useSearch();
-  const { terms, setTerms } = useTerms();
   const [open, setOpen] = useState(false);
   const kub = query.source === "kub";
 
@@ -253,26 +251,6 @@ export function Filters({ places }: { places: PlaceOption[] }) {
               <Chip disabled={kub} on={query.bill} onClick={() => update({ bill: !query.bill })}>Kupçalı</Chip>
               <Chip disabled={kub} on={query.repair} onClick={() => update({ repair: !query.repair })}>Təmirli</Chip>
               <Chip disabled={kub} on={query.mortgage} onClick={() => update({ mortgage: !query.mortgage })}>İpotekaya uyğun</Chip>
-            </div>
-          </Group>
-
-          <Group title="İpoteka şərtləriniz" hint="brauzerinizdə qalır">
-            <div className="terms">
-              <label>
-                <span>İlkin ödəniş</span>
-                <input type="number" min={0} max={90} step={5} value={terms.downPct} onChange={(e) => setTerms({ downPct: e.target.valueAsNumber })} />
-                <i>%</i>
-              </label>
-              <label>
-                <span>Müddət</span>
-                <input type="number" min={1} max={30} value={terms.years} onChange={(e) => setTerms({ years: e.target.valueAsNumber })} />
-                <i>il</i>
-              </label>
-              <label>
-                <span>Faiz</span>
-                <input type="number" min={0} max={30} step={0.5} value={terms.ratePct} onChange={(e) => setTerms({ ratePct: e.target.valueAsNumber })} />
-                <i>%</i>
-              </label>
             </div>
           </Group>
         </div>

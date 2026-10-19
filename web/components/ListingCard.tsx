@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { money, perSqm } from "../../src/lib/format";
 import type { MarketRow } from "@/lib/market";
-import { monthlyPayment } from "@/lib/mortgage";
-import { rowKey, useSaved, useTerms } from "@/lib/store";
+import { rowKey, useSaved } from "@/lib/store";
 import { valueLabel, type Value } from "@/lib/value";
 import { CardPhotos } from "./CardPhotos";
 import { AreaIcon, BedIcon, HeartIcon, PinIcon, StairsIcon, StarIcon } from "./icons";
@@ -19,7 +18,6 @@ export function listingHref(row: Pick<MarketRow, "source" | "listing">, qs = "")
 export function ListingCard({ row, value, qs = "" }: { row: MarketRow; value?: Value; qs?: string }) {
   const { listing, extras, source } = row;
   const { saved, toggle } = useSaved();
-  const { terms } = useTerms();
 
   const isSaved = saved.some((s) => rowKey(s) === rowKey(row));
   const badge = value ? valueLabel(value) : null;
@@ -91,9 +89,6 @@ export function ListingCard({ row, value, qs = "" }: { row: MarketRow; value?: V
               {listing.floor}/{listing.totalFloors}
             </span>
           )}
-          <span className="card-monthly" title={`${terms.downPct}% ilkin, ${terms.years} il, ${terms.ratePct}% illik`}>
-            Aylıq ≈ {money(monthlyPayment(listing.price, terms))}
-          </span>
         </p>
         {standing && <p className="card-ref">{standing}</p>}
         {(extras.bill || extras.repair || extras.mortgage || listing.priceConverted || !listing.marketKnown) && (

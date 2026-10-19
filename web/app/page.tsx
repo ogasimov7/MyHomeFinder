@@ -42,7 +42,7 @@ export default function Home() {
         <div className="hero-side">
           <p>
             bina.az və kub.az-dakı elanları hər ərazinin içində m² qiymətinə görə müqayisə edirik. Hər yerin ən
-            sərfəlisini ilk siz görürsünüz, aylıq ipoteka ödənişi ilə birlikdə.
+            sərfəlisini ilk siz görürsünüz.
           </p>
           <div className="hero-cta">
             <Link href="/search" className="btn-solid">
@@ -90,7 +90,7 @@ export default function Home() {
         <article>
           <KeyIcon size={22} />
           <h3>Sizin ipoteka şərtləriniz</h3>
-          <p>İlkin ödəniş, müddət və faizi bir dəfə yazın: hər kartda aylıq ödəniş sizin şərtlərinizlə görünür. Şərtlər yalnız brauzerinizdə qalır.</p>
+          <p>Elanın səhifəsində ilkin ödəniş, müddət və faizi yazın — aylıq ödəniş dərhal hesablanır. Şərtlər yadda qalır, yalnız brauzerinizdə.</p>
         </article>
         <article>
           <InfoIcon size={22} />
