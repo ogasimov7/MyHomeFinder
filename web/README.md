@@ -44,8 +44,12 @@ sıralanır.
 
 **Nişanlar** (`lib/value.ts`): eyni yerdəki elanlar arasında m²-i ən ucuz olan “Ən sərfəli”, digərləri
 “X% baha” (o ən sərfəliyə nisbətən) alır; tək elana nişan qoyulmur. Kartlarda qrup — axtarışdakı eyni yerin
-elanları, xəritədə — kliklənən dairənin elanları (100-ə qədər bütöv oxunur; daha böyük dairədə panel müqayisənin
-ilk 100 elan arasında olduğunu yazır). Mediana görə “bazardan X% ucuz” göstərilmir: rəqəm satıcıya qiymət
+elanları, xəritədə — kliklənən dairənin **bütün** elanları. bina.az dairəni 25-25 və yalnız verilən sərhəd daxilində
+verir, kursoru isə sadəcə zaman nöqtəsidir: dairə öz plitəsinin sərhədləri ilə soruşulur (ekranın kənarında
+kəsilməsin deyə) və zaman aralıqlarına bölünüb paralel oxunur (eyni anda ən çox 12 sorğu; 1 500 elan ≈ 1,5 s,
+8 000 ≈ 4 s). 10 000-dən böyük dairə zaman üzrə bərabər seçmə ilə oxunur və panel bunu yazır. Panel dairənin m²-i
+ən sərfəli 100 elanını göstərir; orta m² qiyməti isə bütün oxunan elanlar üzrədir. Axtarışda orta m² qiyməti
+ekranda görünən nəticələr üzrədir. Mediana görə “bazardan X% ucuz” göstərilmir: rəqəm satıcıya qiymət
 qaldırmaq üçün hazır arqument olurdu. Mediana görə sıralama (`rank`) arxa planda qalır.
 
 Rayon, mətn axtarışı, “yalnız ən sərfəlilər” və sıralama yalnız göstərilən elanları daraldır və yenidən düzür,

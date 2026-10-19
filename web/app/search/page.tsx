@@ -75,9 +75,8 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
           </p>
           {average && (
             <p className="avg-stat">
-              <span>Nəticələrin orta m² qiyməti</span>
-              <b>{perSqm(average.perSqm)}</b>
-              <small>{average.count} elan üzrə</small>
+              Orta m² qiyməti <b>{perSqm(average.perSqm)}</b>
+              <small>· {COUNT(average.count)} elan</small>
             </p>
           )}
           <p className="results-coverage">

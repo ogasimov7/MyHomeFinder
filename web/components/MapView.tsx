@@ -50,6 +50,8 @@ type ClusterSelection = {
   /** false when the circle held more than could be read and compared */
   complete: boolean;
   failed: boolean;
+  /** how many of the circle's listings were read and compared */
+  read: number | null;
   average: ClusterPage["average"];
 };
 
@@ -122,6 +124,7 @@ export function MapView() {
       total: null,
       complete: true,
       failed: false,
+      read: null,
       average: null,
     });
     const point = m.latLngToContainerPoint([marker.lat, marker.lng]);
@@ -138,7 +141,7 @@ export function MapView() {
       const res = await fetch(`/api/map/cluster?${query}`);
       if (!res.ok) throw new Error(String(res.status));
       const page = (await res.json()) as ClusterPage;
-      update({ items: page.items, total: page.total, complete: page.complete, average: page.average });
+      update({ items: page.items, total: page.total, read: page.read, complete: page.complete, average: page.average });
     } catch {
       update({ items: [], failed: true });
     }
@@ -379,7 +382,7 @@ function ItemCard({ selection, onClose }: { selection: Extract<Selection, { kind
 }
 
 function ClusterPanel({ selection, onClose }: { selection: ClusterSelection; onClose: () => void }) {
-  const { items, total, complete, failed, building, count, average } = selection;
+  const { items, total, complete, failed, building, count, read, average } = selection;
   return (
     <aside className="map-panel" aria-label="Seçilmiş nöqtədəki elanlar">
       <header className="map-panel-head">
@@ -388,9 +391,8 @@ function ClusterPanel({ selection, onClose }: { selection: ClusterSelection; onC
           <p>{building ? "Bu binada satışda olanlar" : "Seçdiyiniz dairədəki elanlar"} · m²-ə görə ən sərfəli yuxarıda</p>
           {average && (
             <p className="avg-stat">
-              <span>{building ? "Binada" : "Dairədə"} orta m² qiyməti</span>
-              <b>{perSqm(average.perSqm)}</b>
-              <small>{complete ? `${average.count} elan üzrə` : `ilk ${average.count} elan üzrə`}</small>
+              Orta m² qiyməti <b>{perSqm(average.perSqm)}</b>
+              <small>· {grouped(average.count)} elan</small>
             </p>
           )}
         </div>
@@ -401,8 +403,13 @@ function ClusterPanel({ selection, onClose }: { selection: ClusterSelection; onC
       <div className="map-panel-list">
         {!complete && items && (
           <p className="map-panel-warn">
-            Bu dairədə {grouped(total ?? count)} elan var — müqayisə ilk {items.length} elan arasındadır. Dəqiq nəticə üçün
-            xəritəni yaxınlaşdırın.
+            Bu dairədə {grouped(total ?? count)} elan var — orta və müqayisə onların {grouped(read ?? items.length)}-i üzrədir.
+            Dəqiq nəticə üçün xəritəni yaxınlaşdırın.
+          </p>
+        )}
+        {complete && items && total !== null && total > items.length && (
+          <p className="map-panel-note is-top">
+            Dairədəki {grouped(total)} elandan m²-i ən sərfəli {items.length}-i göstərilir.
           </p>
         )}
         {items === null

@@ -131,50 +131,114 @@ export async function getPreview(id: string): Promise<Preview | null> {
 export type ClusterItem = Preview & { value: Value };
 
 export interface ClusterPage {
-  /** best value first, then by how much dearer per m² */
+  /** the most favourable first: best value, then by how much dearer per m² */
   items: ClusterItem[];
   /** how many listings the cluster holds in all */
   total: number;
-  /** false when the cluster was larger than could be read whole */
+  /** how many of them were read and compared */
+  read: number;
+  /** false when the cluster was too large to be read whole */
   complete: boolean;
   /** mean price per m² of the listings read, in manat */
   average: { perSqm: number; count: number } | null;
 }
 
-/** bina.az serves 25 per page; four pages is as far as one click reads. */
+/** bina.az serves 25 per page, whatever is asked for. */
 const CLUSTER_PAGE = 25;
-const CLUSTER_MAX = 100;
+/** Read whole up to this; a larger circle is sampled evenly across time. */
+const CLUSTER_MAX = 10_000;
+/** Rows sent to the panel: the most favourable of the whole circle. */
+const CLUSTER_SHOWN = 100;
+/* bina.az pages a cluster newest first, and its cursor is just a moment in
+   time — so the circle can be cut into stretches of time and the stretches
+   read side by side, instead of one page after another. Listings live about
+   a month; stretches are shorter near today, where listings are thicker. */
+const SPAN_HOURS = 24 * 32;
+/** about how many listings one stretch is cut to hold */
+const PER_STRETCH = 150;
+const MAX_STRETCHES = 64;
+/** requests to bina.az in flight at once for one circle */
+const IN_FLIGHT = 12;
+
+const MAP_ITEMS_QUERY = `query MapItems($first: Int, $after: String, $filter: MapItemFilter!) {
+  mapItems(first: $first, after: $after, filter: $filter) {
+    totalCount
+    pageInfo { hasNextPage endCursor }
+    edges { node { ${PREVIEW_FIELDS} } }
+  }
+}`;
+
+type MapItemsPage = {
+  mapItems: { totalCount: number; pageInfo: { hasNextPage: boolean; endCursor: string | null }; edges: { node: RawPreview }[] };
+};
+
+const cursorAt = (ms: number) => Buffer.from(String(Math.round(ms))).toString("base64");
+const cursorTime = (cursor: string) => Number(/^\d+/.exec(Buffer.from(cursor, "base64").toString())?.[0] ?? NaN);
+
+/** Runs the jobs with at most `limit` of them at once, results in order. */
+async function pool<T>(jobs: (() => Promise<T>)[], limit: number): Promise<T[]> {
+  const out: T[] = new Array(jobs.length);
+  let next = 0;
+  const lane = async () => {
+    while (next < jobs.length) {
+      const i = next++;
+      out[i] = await jobs[i]();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, jobs.length) }, lane));
+  return out;
+}
+
+/* A cluster id is a map tile, "15/20923/12359". bina.az lists a cluster only
+   within the bounds it is asked for, so asking with the view on screen cuts
+   off whatever of a circle near the edge lies outside it; asking with the
+   tile's own bounds gets the whole circle. */
+function tileBounds(clusterId: string): Bounds {
+  const [z, x, y] = clusterId.split("/").map(Number);
+  const lng = (tx: number) => (tx / 2 ** z) * 360 - 180;
+  const lat = (ty: number) => (Math.atan(Math.sinh(Math.PI * (1 - (2 * ty) / 2 ** z))) * 180) / Math.PI;
+  return { north: lat(y), south: lat(y + 1), west: lng(x), east: lng(x + 1) };
+}
 
 /* A cluster's listings, read whole so its cheapest per m² is really the
-   cheapest. bina.az asks for the cluster by its own id and also wants the view
-   it came from, and cannot sort them, so they are paged through to the end —
-   up to a hundred; past that the comparison says it covers only those. */
-export async function getCluster(category: Category, bounds: Bounds, clusterId: string): Promise<ClusterPage> {
+   cheapest and its mean is the mean of all of it. */
+export async function getCluster(category: Category, clusterId: string): Promise<ClusterPage> {
   "use cache";
   cacheLife("minutes");
-  const items: Preview[] = [];
-  let after: string | null = null;
+  const vars = { first: CLUSTER_PAGE, filter: { ...filter(category, tileBounds(clusterId)), mapClusterId: clusterId } };
+  const now = Date.now();
+
+  // One stretch: from its start back in time until a page reaches the next
+  // stretch. The page that crosses over is read by both; ids settle that.
   let total = 0;
-  let more = true;
-  while (more && items.length < CLUSTER_MAX) {
-    const data: {
-      mapItems: { totalCount: number; pageInfo: { hasNextPage: boolean; endCursor: string | null }; edges: { node: RawPreview }[] };
-    } = await ask(
-      `query MapItems($first: Int, $after: String, $filter: MapItemFilter!) {
-        mapItems(first: $first, after: $after, filter: $filter) {
-          totalCount
-          pageInfo { hasNextPage endCursor }
-          edges { node { ${PREVIEW_FIELDS} } }
-        }
-      }`,
-      { first: CLUSTER_PAGE, after, filter: { ...filter(category, bounds), mapClusterId: clusterId } },
-    );
-    const page = data.mapItems;
-    total = page.totalCount;
-    items.push(...page.edges.flatMap(({ node }) => toPreview(node) ?? []));
-    more = page.pageInfo.hasNextPage && page.pageInfo.endCursor !== null;
-    after = page.pageInfo.endCursor;
-  }
+  let capped = false;
+  const stretch = async (from: number | null, until: number, budget: number) => {
+    const out: Preview[] = [];
+    let after: string | null = from === null ? null : cursorAt(from);
+    for (let pages = 0; ; pages++) {
+      if (pages >= budget) {
+        capped = true;
+        break;
+      }
+      const page: MapItemsPage["mapItems"] = (await ask<MapItemsPage>(MAP_ITEMS_QUERY, { ...vars, after })).mapItems;
+      total = Math.max(total, page.totalCount);
+      out.push(...page.edges.flatMap(({ node }) => toPreview(node) ?? []));
+      const end = page.pageInfo.endCursor;
+      if (!page.pageInfo.hasNextPage || !end || cursorTime(end) < until) break;
+      after = end;
+    }
+    return out;
+  };
+
+  // How large the circle is decides how finely it is cut.
+  const head = await ask<MapItemsPage>(MAP_ITEMS_QUERY, { ...vars, after: null });
+  total = head.mapItems.totalCount;
+  const count = Math.min(MAX_STRETCHES, Math.max(1, Math.ceil(total / PER_STRETCH)));
+  const starts = Array.from({ length: count }, (_, i) => now - SPAN_HOURS * (i / count) ** 2 * 3_600_000);
+  const budget = total > CLUSTER_MAX ? Math.ceil(CLUSTER_MAX / CLUSTER_PAGE / count) : Infinity;
+  const jobs = starts.map((from, i) => () => stretch(i === 0 ? null : from, starts[i + 1] ?? -Infinity, budget));
+  const read = (await pool(jobs, IN_FLIGHT)).flat();
+  const items = [...new Map(read.map((p) => [p.id, p])).values()];
 
   // The whole circle is one group: one listing in it is the best value.
   const sqm = (i: Preview) => manatPerSqm(i.price, i.currency, i.area);
@@ -182,8 +246,15 @@ export async function getCluster(category: Category, bounds: Bounds, clusterId: 
   const ranked = items
     .map((item, order) => ({ ...item, value: values.get(item)!, order }))
     .sort((a, b) => byValue(a.value, b.value) || a.order - b.order)
+    .slice(0, CLUSTER_SHOWN)
     .map(({ order: _order, ...item }) => item);
-  return { items: ranked, total, complete: !more, average: meanPerSqm(items.map(sqm)) };
+  return {
+    items: ranked,
+    total,
+    read: items.length,
+    complete: !capped,
+    average: meanPerSqm(items.map(sqm)),
+  };
 }
 
 /* ---------------- request parsing ---------------- */
