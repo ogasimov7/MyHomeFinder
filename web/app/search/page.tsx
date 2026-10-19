@@ -10,6 +10,7 @@ import { getMarket } from "@/lib/market";
 import { getPlaceOptions } from "@/lib/places";
 import { marketKey, parseQuery, placeLabel, queryString } from "@/lib/query";
 import { perSqm } from "../../../src/lib/format";
+import { DISTRICTS } from "../../../src/lib/geography";
 import { meanPerSqm } from "@/lib/value";
 import { view } from "@/lib/view";
 
@@ -65,9 +66,12 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
   const { rows, values } = view(market, query);
   const site = market.source === "bina" ? "bina.az" : "kub.az";
   const qs = queryString(query);
-  const chosen = query.places.length && market.source === "bina"
-    ? (await getPlaceOptions().catch(() => [])).filter((p) => query.places.includes(p.id)).map(placeLabel)
-    : [];
+  // "Nəsimi: 28 May m., Sahil m. · Yasamal r." — each district, narrowed or whole.
+  const catalog = query.places.length && market.source === "bina" ? await getPlaceOptions().catch(() => []) : [];
+  const chosen = DISTRICTS.filter((d) => query.districts.includes(d.id)).map((d) => {
+    const inside = catalog.filter((p) => query.places.includes(p.id) && p.districts.includes(d.id)).map(placeLabel);
+    return inside.length ? `${d.name}: ${inside.join(", ")}` : `${d.name} r.`;
+  });
   // Over exactly the listings shown: every filter, district and text applied.
   const average = meanPerSqm(rows.map((r) => r.listing.pricePerSqm));
 
@@ -83,7 +87,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
               </span>
             )}
           </p>
-          {chosen.length > 0 && <p className="results-places">Ərazi: {chosen.join(", ")}</p>}
+          {chosen.length > 0 && <p className="results-places">{chosen.join(" · ")}</p>}
           {average && (
             <p className="avg-stat">
               Orta m² qiyməti <b>{perSqm(average.perSqm)}</b>

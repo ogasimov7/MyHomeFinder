@@ -11,7 +11,7 @@
 import { fold } from "../../src/lib/geo";
 import type { Listing } from "../../src/lib/cards";
 import type { Market, MarketRow } from "./market";
-import { BUDGETS, SIZES, range, type Query } from "./query";
+import { BINA_DISTRICT_ID, BUDGETS, SIZES, range, type Query } from "./query";
 import { bestValue, byValue, type Value } from "./value";
 
 function within(value: number, r: { from?: number; to?: number }): boolean {
@@ -44,9 +44,14 @@ export function view(market: Market, query: Query): { rows: MarketRow[]; values:
   const base = searched(market, query);
   const values = placeValues(base);
   const needle = query.q ? fold(query.q) : "";
+  // bina.az was asked for the districts themselves; its own filing is kept
+  // over the district this site reads off a card. kub.az could not be asked,
+  // and nor can a district bina.az has no id for.
+  const byDistrict =
+    query.districts.length > 0 && (market.postFilter || query.districts.some((d) => !BINA_DISTRICT_ID[d]));
 
   const rows = base.filter(({ listing }) => {
-    if (query.districts.length && !query.districts.includes(listing.districtId)) return false;
+    if (byDistrict && !query.districts.includes(listing.districtId)) return false;
     if (query.best && values[listing.id].kind !== "best") return false;
     if (needle && !fold(`${listing.areaName} ${listing.districtName}`).includes(needle)) return false;
     return true;

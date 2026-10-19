@@ -418,69 +418,84 @@ button {
   gap: 6px;
 }
 
-.seg-3 {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.seg-3 .chip {
-  padding: 8px 6px;
-  font-size: 13px;
-}
-
-/* metro, settlements, microdistricts */
-.place-picker {
+/* A chosen district's own places, one level down: set in under a bronze
+   rule, lighter and smaller than the district chips above. */
+.subplaces {
   display: grid;
-  gap: 8px;
+  gap: 10px;
+  margin: 12px 0 2px 6px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid var(--accent);
 }
 
-.place-picker.is-disabled {
-  opacity: 0.55;
-}
-
-.place-chosen .chip {
-  gap: 6px;
-  padding: 6px 10px 6px 12px;
-  font-size: 13px;
-}
-
-.place-search {
+.subplaces-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  padding: 0 12px;
+}
+
+.subplaces-head > span {
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.subplaces-head small {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 400;
+}
+
+.subplaces-group {
+  display: grid;
+  gap: 6px;
+}
+
+.subplaces-label {
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.subchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.subchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--panel);
-  color: var(--faint);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.35;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.place-search input {
-  flex: 1;
-  min-width: 0;
-  height: 36px;
-  border: 0;
-  outline: 0;
-  background: none;
-  color: var(--ink);
-  font-size: 14px;
+.subchip:hover {
+  border-color: var(--faint);
 }
 
-.place-list {
-  max-height: 196px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 2px 0;
+.subchip.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
 }
 
-.place-list .chip {
-  padding: 6px 12px;
-  font-size: 13px;
+.subchip.is-all {
+  padding: 3px 9px;
+  font-size: 12px;
 }
 
-.place-empty {
-  color: var(--muted);
-  font-size: 13px;
-}
 
 .tiles {
   display: grid;

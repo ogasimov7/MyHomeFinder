@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { fold } from "../../src/lib/geo";
 import { DISTRICTS } from "../../src/lib/geography";
 import {
   BUDGETS,
@@ -10,14 +9,12 @@ import {
   PLACE_KINDS,
   ROOMS,
   SIZES,
-  placeLabel,
   type Category,
-  type PlaceKind,
   type PlaceOption,
 } from "@/lib/query";
 import { useTerms } from "@/lib/store";
 import { useSearch } from "./SearchState";
-import { BuildingIcon, CloseIcon, FilterIcon, HouseIcon, KeyIcon, SearchIcon, SparkIcon } from "./icons";
+import { BuildingIcon, CheckIcon, CloseIcon, FilterIcon, HouseIcon, KeyIcon, SparkIcon } from "./icons";
 
 const CATEGORIES: { id: Category; label: string; icon: typeof BuildingIcon }[] = [
   { id: "flat", label: "Bütün mənzillər", icon: BuildingIcon },
@@ -50,73 +47,102 @@ function toggleIn(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value].sort();
 }
 
-/* Metro stations, settlements and microdistricts: too many for one row of
-   chips, so they come in tabs with a box to type into. Typing looks across
-   all three; what is chosen stays on top whichever tab is open. */
-function PlacePicker({
+/* The districts, and inside each one chosen, the places it can be narrowed
+   to — its metro stations, settlements and microdistricts — set in below it
+   as a smaller, lighter level. None chosen means the whole district. */
+function DistrictPicker({
   places,
-  selected,
+  districts,
+  chosen,
+  finer,
   onChange,
-  disabled,
 }: {
   places: PlaceOption[];
-  selected: string[];
-  onChange: (ids: string[]) => void;
-  disabled: boolean;
+  districts: string[];
+  chosen: string[];
+  /** whether the source can be asked for places at all */
+  finer: boolean;
+  onChange: (patch: { districts: string[]; places: string[] }) => void;
 }) {
-  const [kind, setKind] = useState<PlaceKind>("metro");
-  const [text, setText] = useState("");
-  const needle = fold(text.trim());
-  const chosen = selected.flatMap((id) => places.find((p) => p.id === id) ?? []);
-  const shown = needle
-    ? places.filter((p) => fold(p.name).includes(needle))
-    : places.filter((p) => p.kind === kind);
-  const full = selected.length >= MAX_PLACES;
-  const toggle = (id: string) =>
-    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : full ? selected : [...selected, id]);
+  const inDistrict = (d: string) => places.filter((p) => p.districts.includes(d));
 
-  if (!places.length) return <p className="place-empty">Ərazi siyahısı hazırda yüklənmədi.</p>;
+  const toggleDistrict = (d: string) => {
+    if (!districts.includes(d)) return onChange({ districts: [...districts, d].sort(), places: chosen });
+    const rest = districts.filter((x) => x !== d);
+    // A place leaves with its district, unless another chosen district holds it too.
+    const keep = chosen.filter((id) => places.find((p) => p.id === id)?.districts.some((x) => rest.includes(x)));
+    onChange({ districts: rest, places: keep });
+  };
+  const togglePlace = (id: string) =>
+    onChange({
+      districts,
+      places: chosen.includes(id) ? chosen.filter((x) => x !== id) : chosen.length >= MAX_PLACES ? chosen : [...chosen, id],
+    });
+  const wholeDistrict = (d: string) => {
+    const mine = new Set(inDistrict(d).map((p) => p.id));
+    onChange({ districts, places: chosen.filter((id) => !mine.has(id)) });
+  };
 
   return (
-    <div className={`place-picker${disabled ? " is-disabled" : ""}`}>
-      {chosen.length > 0 && (
-        <div className="chips place-chosen">
-          {chosen.map((p) => (
-            <Chip key={p.id} on onClick={() => toggle(p.id)} disabled={disabled}>
-              {placeLabel(p)} <CloseIcon size={12} />
-            </Chip>
-          ))}
-        </div>
-      )}
-      <label className="place-search">
-        <SearchIcon size={15} />
-        <input
-          type="search"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Metro, qəsəbə, mikrorayon…"
-          disabled={disabled}
-          aria-label="Ərazi axtar"
-        />
-      </label>
-      {!needle && (
-        <div className="seg seg-3">
-          {PLACE_KINDS.map((k) => (
-            <Chip key={k.id} on={kind === k.id} onClick={() => setKind(k.id)} disabled={disabled}>
-              {k.label}
-            </Chip>
-          ))}
-        </div>
-      )}
-      <div className="chips place-list">
-        {shown.map((p) => (
-          <Chip key={p.id} on={selected.includes(p.id)} onClick={() => toggle(p.id)} disabled={disabled || (full && !selected.includes(p.id))}>
-            {needle ? placeLabel(p) : p.name}
+    <>
+      <div className="chips">
+        {DISTRICTS.map((d) => (
+          <Chip key={d.id} on={districts.includes(d.id)} onClick={() => toggleDistrict(d.id)}>
+            {d.name}
           </Chip>
         ))}
-        {shown.length === 0 && <p className="place-empty">“{text.trim()}” tapılmadı.</p>}
       </div>
-    </div>
+
+      {finer &&
+        DISTRICTS.filter((d) => districts.includes(d.id)).map((d) => {
+          const own = inDistrict(d.id);
+          if (!own.length) return null;
+          const picked = own.filter((p) => chosen.includes(p.id)).length;
+          return (
+            <section key={d.id} className="subplaces" aria-label={`${d.name} rayonu üzrə`}>
+              <header className="subplaces-head">
+                <span>
+                  {d.name} <small>rayonu</small>
+                </span>
+                <button
+                  type="button"
+                  className={`subchip is-all${picked === 0 ? " is-on" : ""}`}
+                  aria-pressed={picked === 0}
+                  onClick={() => wholeDistrict(d.id)}
+                >
+                  Bütün rayon
+                </button>
+              </header>
+              {PLACE_KINDS.map((k) => {
+                const items = own.filter((p) => p.kind === k.id);
+                if (!items.length) return null;
+                return (
+                  <div key={k.id} className="subplaces-group">
+                    <span className="subplaces-label">{k.label}</span>
+                    <div className="subchips">
+                      {items.map((p) => {
+                        const on = chosen.includes(p.id);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className={`subchip${on ? " is-on" : ""}`}
+                            aria-pressed={on}
+                            onClick={() => togglePlace(p.id)}
+                          >
+                            {on && <CheckIcon size={12} />}
+                            {p.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+          );
+        })}
+    </>
   );
 }
 
@@ -182,18 +208,14 @@ export function Filters({ places }: { places: PlaceOption[] }) {
             </div>
           </Group>
 
-          <Group title="Ərazi" hint={kub ? "yalnız bina.az" : "metro, qəsəbə, mikrorayon"}>
-            <PlacePicker places={places} selected={query.places} onChange={(ids) => update({ places: ids })} disabled={kub} />
-          </Group>
-
-          <Group title="Rayon">
-            <div className="chips">
-              {DISTRICTS.map((d) => (
-                <Chip key={d.id} on={query.districts.includes(d.id)} onClick={() => update({ districts: toggleIn(query.districts, d.id) })}>
-                  {d.name}
-                </Chip>
-              ))}
-            </div>
+          <Group title="Rayon" hint={kub ? undefined : "seçin, alt ərazilər açılır"}>
+            <DistrictPicker
+              places={places}
+              districts={query.districts}
+              chosen={query.places}
+              finer={!kub}
+              onChange={(patch) => update(patch)}
+            />
           </Group>
 
           <Group title="Otaq sayı">

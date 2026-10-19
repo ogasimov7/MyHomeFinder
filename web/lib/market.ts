@@ -13,6 +13,8 @@
    ============================================================ */
 
 import "server-only";
+import { TIMEOUT_MS, USER_AGENT } from "./http";
+import { locationIdsFor } from "./places";
 import { cacheLife } from "next/cache";
 import { parse, type HTMLElement, type Node } from "node-html-parser";
 import { FRESH_DAYS, scanCards, type Listing, type PropertyType, type RawCard } from "../../src/lib/cards";
@@ -56,8 +58,7 @@ export interface Market {
 
 /** Enough listings for the area medians to mean something; see reader.ts. */
 const TARGET = 300;
-export const TIMEOUT_MS = 12_000;
-export const USER_AGENT = "Mozilla/5.0 (compatible; HomeFinder/1.0)";
+export { TIMEOUT_MS, USER_AGENT };
 
 export async function getMarket(key: MarketKey): Promise<Market> {
   "use cache";
@@ -117,14 +118,14 @@ interface BinaPage {
   edges: { node: BinaItem }[];
 }
 
-function binaFilter(key: MarketKey) {
+async function binaFilter(key: MarketKey) {
   const price = range(BUDGETS, key.budget);
   const area = range(SIZES, key.size);
   return {
     cityId: "1",
     leased: false,
     categoryId: BINA_CATEGORY[key.category],
-    locationIds: key.places.length ? key.places : undefined,
+    locationIds: await locationIdsFor(key.districts, key.places),
     roomIds: key.rooms.length ? key.rooms : undefined,
     priceFrom: price.from,
     priceTo: price.to,
@@ -156,7 +157,7 @@ export function binaCardText(item: BinaCardFields): string {
 }
 
 async function readBina(key: MarketKey): Promise<Market> {
-  const filter = binaFilter(key);
+  const filter = await binaFilter(key);
   const items: BinaItem[] = [];
   let cursor: string | null = null;
   let total: number | null = null;

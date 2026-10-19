@@ -7,7 +7,7 @@ const STEPS = [
   {
     n: "01",
     title: "Axtarış oxunur",
-    body: "Filtrlərinizə uyğun ən son ~300 elan bina.az və ya kub.az-dan oxunur. Metro, qəsəbə və ya mikrorayon seçsəniz, bina.az elanları birbaşa o yerlərdən verir. Nəticə 10 dəqiqəlik keşdə qalır, ona görə saytlara hər ziyarətçi üçün yeni sorğu getmir.",
+    body: "Filtrlərinizə uyğun ən son ~300 elan bina.az və ya kub.az-dan oxunur. Rayon seçəndə onun metro, qəsəbə və mikrorayonları açılır; bina.az elanları birbaşa seçdiyiniz yerlərdən verir. Nəticə 10 dəqiqəlik keşdə qalır, ona görə saytlara hər ziyarətçi üçün yeni sorğu getmir.",
   },
   {
     n: "02",

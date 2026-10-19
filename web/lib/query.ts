@@ -19,7 +19,8 @@ export interface Query {
   size: string | null;
   /** district ids from the shared geography */
   districts: string[];
-  /** bina.az location ids — metro stations, settlements, microdistricts */
+  /** bina.az location ids of places within the chosen districts — metro
+      stations, settlements, microdistricts; a district with none is whole */
   places: string[];
   /** bina.az only: the documents a listing must have */
   bill: boolean;
@@ -37,7 +38,7 @@ export const ROOMS = ["1", "2", "3", "4", "5+"] as const;
 /** How many places one search may ask for at once. */
 export const MAX_PLACES = 20;
 
-/* The finer places a search can be narrowed to, as bina.az files its
+/* The finer places a district can be narrowed to, as bina.az files its
    listings: metro stations, settlements, and the numbered microdistricts it
    lists among the settlements. */
 export type PlaceKind = "metro" | "settlement" | "micro";
@@ -47,9 +48,25 @@ export interface PlaceOption {
   id: string;
   name: string;
   kind: PlaceKind;
-  /** the district a settlement belongs to, when bina.az says */
-  district: string | null;
+  /** the districts (shared ids) it lies in — a station on a border, two */
+  districts: string[];
 }
+
+/** bina.az's own location id for each district it files Baku listings under. */
+export const BINA_DISTRICT_ID: Record<string, string> = {
+  sabail: "12",
+  nasimi: "190",
+  narimanov: "10",
+  yasamal: "56",
+  khatai: "16",
+  nizami: "11",
+  binagadi: "58",
+  sabunchu: "13",
+  surakhani: "14",
+  khazar: "15",
+  garadagh: "57",
+  absheron: "197",
+};
 
 export const PLACE_KINDS: { id: PlaceKind; label: string; suffix: string }[] = [
   { id: "metro", label: "Metro", suffix: "m." },
@@ -171,13 +188,15 @@ export function range<T extends { id: string; from?: number; to?: number }>(
 }
 
 /* What decides which listings are fetched and ranked. Everything else —
-   districts, the text box, the order — only narrows or reorders that one
-   ranked page, so changing it never re-reads the site. Places are asked of
-   the site itself: 300 listings of 28 May, not the few of the latest 300
-   that happen to be there. */
+   the text box, the order — only narrows or reorders that one ranked page,
+   so changing it never re-reads the site. Districts and their places are
+   asked of bina.az itself: 300 listings of Nəsimi, not the few of the
+   latest 300 that happen to be there. kub.az cannot be asked, so its page
+   is read whole and narrowed by district afterwards. */
 export interface MarketKey {
   source: Source;
   category: Category;
+  districts: string[];
   places: string[];
   rooms: string[];
   budget: string | null;
@@ -188,11 +207,11 @@ export interface MarketKey {
 }
 
 export function marketKey(query: Query): MarketKey {
-  const { source, category, places, rooms, budget, size, bill, repair, mortgage } = query;
+  const { source, category, districts, places, rooms, budget, size, bill, repair, mortgage } = query;
   // kub.az is read whole and narrowed afterwards, so one page serves every
   // filter on it — and is fetched once, not once per filter.
   if (source === "kub") {
-    return { source, category, places: [], rooms: [], budget: null, size: null, bill: false, repair: false, mortgage: false };
+    return { source, category, districts: [], places: [], rooms: [], budget: null, size: null, bill: false, repair: false, mortgage: false };
   }
-  return { source, category, places, rooms, budget, size, bill, repair, mortgage };
+  return { source, category, districts, places, rooms, budget, size, bill, repair, mortgage };
 }
