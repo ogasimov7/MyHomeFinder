@@ -5,6 +5,7 @@ import { ListingCard } from "@/components/ListingCard";
 import { CardSkeletons } from "@/components/Skeletons";
 import { getMarket, type Market } from "@/lib/market";
 import { DEFAULT_QUERY, marketKey } from "@/lib/query";
+import { DISTRICTS } from "../../src/lib/geography";
 import { placeValues } from "@/lib/view";
 
 const SHORTCUTS = [
@@ -69,15 +70,15 @@ export default function Home() {
       <section className="section">
         <header className="section-head">
           <div>
-            <h2>Bu günün ən sərfəliləri</h2>
-            <p>bina.az-da son əlavə olunan mənzillər arasında, hər birinin ərazisində m²-i ən ucuz olanlar.</p>
+            <h2>Rayonlar üzrə ən sərfəlilər</h2>
+            <p>bina.az-da son əlavə olunan mənzillər arasında, hər rayonda öz ərazisinin m²-i ən ucuzu olanlar.</p>
           </div>
           <Link href="/search?best=1" className="link-arrow">
             Hamısına bax <ArrowIcon size={16} />
           </Link>
         </header>
         <Suspense fallback={<CardSkeletons count={6} />}>
-          <Deals />
+          <DistrictDeals />
         </Suspense>
       </section>
 
@@ -85,7 +86,7 @@ export default function Home() {
         <article>
           <ChartIcon size={22} />
           <h3>Öz məhəlləsinin içində</h3>
-          <p>Elanlar eyni metro, qəsəbə və ya mikrorayondakı qonşuları ilə m² qiymətinə görə müqayisə olunur. Ən ucuzu “Ən sərfəli” nişanı alır, digərlərində ondan neçə faiz baha olduğu yazılır.</p>
+          <p>Elanlar eyni metro, qəsəbə və ya mikrorayondakı qonşuları ilə m² qiymətinə görə müqayisə olunur. Ən ucuzu “Ən sərfəli”, ərazinin ortasından ucuzlar “Sərfəli təklif” nişanı alır; ortadan bahalarda neçə faiz baha olduğu yazılır.</p>
         </article>
         <article>
           <KeyIcon size={22} />
@@ -145,7 +146,13 @@ async function Stats() {
   );
 }
 
-async function Deals() {
+/** Cards shown per district on the home page. */
+const PER_DISTRICT = 4;
+
+/* The best value of each place, gathered by district: a row of cards for
+   every district that has any in the latest listings, central ones first.
+   "All" opens that district's own search, read from bina.az for it alone. */
+async function DistrictDeals() {
   const market = await latest();
   if (!market) {
     return (
@@ -156,12 +163,38 @@ async function Deals() {
     );
   }
   const values = placeValues(market.rows);
-  // The ranking's own order, keeping only the best of each place.
-  const rows = market.rows.filter((r) => values[r.listing.id].kind === "best").slice(0, 6);
+  const best = market.rows.filter((r) => values[r.listing.id].kind === "best");
+  const districts = DISTRICTS.flatMap((d) => {
+    // Places with more listings first: being the cheapest of many says more.
+    const rows = best
+      .filter((r) => r.listing.districtId === d.id)
+      .sort((a, b) => {
+        const va = values[a.listing.id];
+        const vb = values[b.listing.id];
+        return (vb.kind === "best" ? vb.size : 0) - (va.kind === "best" ? va.size : 0);
+      })
+      .slice(0, PER_DISTRICT);
+    return rows.length ? [{ district: d, rows }] : [];
+  });
+
   return (
-    <div className="grid grid-3">
-      {rows.map((row) => (
-        <ListingCard key={row.listing.id} row={row} value={values[row.listing.id]} />
+    <div className="district-deals">
+      {districts.map(({ district, rows }) => (
+        <section key={district.id} className="district-row" aria-label={`${district.name} rayonu`}>
+          <header>
+            <h3>
+              {district.name} <span>rayonu</span>
+            </h3>
+            <Link href={`/search?district=${district.id}&best=1`} className="link-arrow">
+              Hamısı <ArrowIcon size={15} />
+            </Link>
+          </header>
+          <div className="rail">
+            {rows.map((row) => (
+              <ListingCard key={row.listing.id} row={row} value={values[row.listing.id]} />
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   );

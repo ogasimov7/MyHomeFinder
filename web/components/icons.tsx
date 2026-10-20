@@ -170,3 +170,16 @@ export const MapIcon = (p: IconProps) => (
     <path d="M9 4v13.5M15 6.5V20" />
   </Icon>
 );
+
+export const PhoneIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 3.5h3.2l1.6 4-2 1.3a11 11 0 0 0 5.4 5.4l1.3-2 4 1.6V17a2 2 0 0 1-2 2A15.5 15.5 0 0 1 3 5.5a2 2 0 0 1 2-2Z" />
+  </Icon>
+);
+
+export const ChatIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4.5 19.5 5.6 16A8 8 0 1 1 8.3 18.6Z" />
+    <path d="M9.2 9.3c.2 1.9 1.6 3.5 3.6 4.2l1-.9 1.6.8c-.2.9-.9 1.4-1.8 1.3-2.8-.4-5-2.6-5.4-5.4-.1-.9.4-1.6 1.3-1.8l.8 1.6Z" />
+  </Icon>
+);

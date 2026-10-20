@@ -47,6 +47,13 @@ mənbə linki gəlir. Kartdan açılan link axtarış parametrlərini daşıyır
 müqayisə olunur və faiz kartdakı ilə eyni çıxır. Elan o axtarışda yoxdursa, öz rayonunun elanları ilə
 sıralanır.
 
+**Satıcı ilə əlaqə**: elan səhifəsində “Zəng et” və “WhatsApp”. bina.az nömrəni yalnız soruşulanda verir
+(`/items/{id}/phones` — öz “nömrəni göstər” düyməsinin sorğusu); `/api/phone/[id]` onu yalnız düyməyə basılanda,
+həmin bir elan üçün soruşur, keşləmir və saxlamır. kub.az elanları üçün elanın öz səhifəsinə keçid qalır.
+
+**Ana səhifə**: son elanların “Ən sərfəli”ləri rayonlar üzrə sıra-sıra (hər rayonda 4-ə qədər; çox elanlı yerin
+ən ucuzu öndə); “Hamısı” həmin rayonun öz axtarışını açır.
+
 **Nişanlar** (`lib/value.ts`): eyni yerdəki elanların orta m² qiyməti tapılır. m²-i ən ucuz olan
 “Ən sərfəli”, ortadan ucuz olanlar “Sərfəli təklif” (faizsiz — satıcıya qaldırmaq üçün rəqəm verilmir), ortadan
 baha olanlar “X% baha” (ortaya nisbətən; 1%-dən az fərq “Orta qiymətdə”) alır; tək elana nişan qoyulmur. Kartlarda qrup — axtarışdakı eyni yerin

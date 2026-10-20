@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { money, perSqm } from "../../../../../src/lib/format";
 import type { Listing } from "../../../../../src/lib/cards";
-import { BackButton, Description, MortgageCalc, SaveButton, ShareButton } from "@/components/DetailParts";
+import { BackButton, ContactButtons, Description, MortgageCalc, SaveButton, ShareButton } from "@/components/DetailParts";
 import { Gallery } from "@/components/Gallery";
 import { AreaIcon, BedIcon, CheckIcon, ExternalIcon, PinIcon, StairsIcon, StarIcon, TagIcon, UserIcon } from "@/components/icons";
 import { ListingCard } from "@/components/ListingCard";
@@ -305,10 +305,10 @@ async function ListingView({ params, searchParams }: Props) {
                 </span>
               </div>
             </div>
-            <a className="btn-solid" href={detail.origin ?? detail.url} target="_blank" rel="noopener noreferrer">
-              Satıcı ilə əlaqə <ExternalIcon size={16} />
-            </a>
-            <p className="box-note">Telefon nömrəsi elanın öz səhifəsindədir. HomeFinder əlaqə məlumatı saxlamır.</p>
+            <ContactButtons source={source} id={detail.id} listingUrl={detail.origin ?? detail.url} />
+            <p className="box-note">
+              Nömrə {siteName(source)}-dan yalnız düyməyə basanda alınır; HomeFinder onu saxlamır.
+            </p>
           </section>
         </aside>
       </div>
@@ -327,9 +327,7 @@ async function ListingView({ params, searchParams }: Props) {
             listing && <span>{perSqm(listing.pricePerSqm)}</span>
           )}
         </div>
-        <a className="btn-solid" href={detail.origin ?? detail.url} target="_blank" rel="noopener noreferrer">
-          Satıcı ilə əlaqə
-        </a>
+        <ContactButtons source={source} id={detail.id} listingUrl={detail.origin ?? detail.url} compact />
       </div>
 
       {similar.length > 0 && (

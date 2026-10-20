@@ -727,6 +727,68 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* Home: a row of cards per district. Four fit across a wide screen; on a
+   narrow one the row scrolls sideways, a card and a bit at a time. */
+.district-deals {
+  display: grid;
+  gap: 36px;
+}
+
+.district-row > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.district-row h3 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.district-row h3 span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 3 * 18px) / 4);
+  gap: 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail > .card {
+  scroll-snap-align: start;
+}
+
+@media (max-width: 1100px) {
+  .rail {
+    grid-auto-columns: calc((100% - 18px) / 2.3);
+  }
+}
+
+@media (max-width: 640px) {
+  .rail {
+    grid-auto-columns: 84%;
+    gap: 14px;
+  }
+
+  .district-row h3 {
+    font-size: 19px;
+  }
+}
+
 .more {
   display: flex;
   flex-direction: column;
@@ -770,6 +832,7 @@ button {
   display: flex;
   height: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -1505,7 +1568,11 @@ button {
 
 .pstrip {
   display: flex;
+  /* x alone would turn y to auto as well, and the strip would shift a few
+     pixels up and down under a swipe */
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   border-radius: 16px;
@@ -1525,6 +1592,7 @@ button {
 }
 
 .pstrip img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1966,6 +2034,53 @@ button {
 .seller-who span {
   color: var(--muted);
   font-size: 14px;
+}
+
+/* Call or write to the seller. */
+.contact {
+  display: grid;
+  gap: 8px;
+}
+
+.contact-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.contact-buttons a {
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.contact-buttons a[aria-busy="true"] {
+  opacity: 0.7;
+}
+
+.contact-chat {
+  color: #1a7f4b;
+}
+
+.contact-chat:hover {
+  border-color: #1a7f4b;
+}
+
+.contact-number {
+  color: var(--ink-2);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.contact-failed {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.contact-failed a {
+  color: var(--accent-ink);
+  text-decoration: underline;
 }
 
 /* ---------------- map ---------------- */
@@ -2790,6 +2905,30 @@ button {
   .detail-bar .btn-solid {
     flex-shrink: 0;
     padding: 12px 20px;
+  }
+
+  .detail-bar .contact {
+    flex-shrink: 0;
+  }
+
+  .detail-bar .contact-buttons {
+    grid-template-columns: auto auto;
+    gap: 6px;
+  }
+
+  .detail-bar .contact-buttons a {
+    gap: 6px;
+    padding: 10px 13px;
+    font-size: 14px;
+  }
+
+  .detail-bar b,
+  .detail-bar span {
+    white-space: nowrap;
+  }
+
+  .detail-bar .contact-failed {
+    display: none;
   }
 
   .page-head {
