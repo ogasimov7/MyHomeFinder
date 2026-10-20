@@ -54,6 +54,15 @@ həmin bir elan üçün soruşur, keşləmir və saxlamır. kub.az elanları ü�
 **Ana səhifə**: son elanların “Ən sərfəli”ləri rayonlar üzrə sıra-sıra (hər rayonda 4-ə qədər; çox elanlı yerin
 ən ucuzu öndə); “Hamısı” həmin rayonun öz axtarışını açır.
 
+**İlkin ödəniş qiymət yerinə** (`lib/instalment.ts`): bəzi satıcılar qiymət xanasına ilkin və ya aylıq
+ödənişi yazır və elan öz yerinin “Ən sərfəli”si kimi görünür. m² qiyməti öz yerinin medianının 60%-indən aşağı olan
+elan şübhəlidir; onun bina.az açıqlaması oxunur (yalnız şübhəlilər üçün, keşlə) və orada “ilkin ödəniş”, “aylıq
+ödəniş”, “hissə-hissə”, “daxili kredit”, “kreditlə”, “первоначальный взнос” və s. yazılıbsa (“daxili kredit yoxdur”
+kimi inkar sayılmır), elan nişanlardan əvvəl çıxarılır. 200 m²-ə qədər mənzil medianın 35%-indən də ucuzdursa,
+açıqlamasız çıxarılır; böyük penthouse və dubleksə bu tətbiq olunmur — onların m² qiyməti həqiqətən aşağı olur.
+Axtarışda, xəritə dairəsində və ana səhifədə belədir; elanın öz səhifəsində “Qiymət ilkin ödəniş ola bilər”
+xəbərdarlığı çıxır və müqayisə edilmir.
+
 **Nişanlar** (`lib/value.ts`): eyni yerdəki elanların orta m² qiyməti tapılır. m²-i ən ucuz olan
 “Ən sərfəli”, ortadan ucuz olanlar “Sərfəli təklif” (faizsiz — satıcıya qaldırmaq üçün rəqəm verilmir), ortadan
 baha olanlar “X% baha” (ortaya nisbətən; 1%-dən az fərq “Orta qiymətdə”) alır; tək elana nişan qoyulmur. Kartlarda qrup — axtarışdakı eyni yerin

@@ -53,6 +53,7 @@ type ClusterSelection = {
   /** how many of the circle's listings were read and compared */
   read: number | null;
   average: ClusterPage["average"];
+  setAside: number;
 };
 
 type Selection = { kind: "item"; id: string; item: Preview | null } | ClusterSelection;
@@ -126,6 +127,7 @@ export function MapView() {
       failed: false,
       read: null,
       average: null,
+      setAside: 0,
     });
     const point = m.latLngToContainerPoint([marker.lat, marker.lng]);
     const size = m.getSize();
@@ -141,7 +143,7 @@ export function MapView() {
       const res = await fetch(`/api/map/cluster?${query}`);
       if (!res.ok) throw new Error(String(res.status));
       const page = (await res.json()) as ClusterPage;
-      update({ items: page.items, total: page.total, read: page.read, complete: page.complete, average: page.average });
+      update({ items: page.items, total: page.total, read: page.read, complete: page.complete, average: page.average, setAside: page.setAside });
     } catch {
       update({ items: [], failed: true });
     }
@@ -382,7 +384,7 @@ function ItemCard({ selection, onClose }: { selection: Extract<Selection, { kind
 }
 
 function ClusterPanel({ selection, onClose }: { selection: ClusterSelection; onClose: () => void }) {
-  const { items, total, complete, failed, building, count, read, average } = selection;
+  const { items, total, complete, failed, building, count, read, average, setAside } = selection;
   return (
     <aside className="map-panel" aria-label="Seçilmiş nöqtədəki elanlar">
       <header className="map-panel-head">
@@ -410,6 +412,11 @@ function ClusterPanel({ selection, onClose }: { selection: ClusterSelection; onC
         {complete && items && total !== null && total > items.length && (
           <p className="map-panel-note is-top">
             Dairədəki {grouped(total)} elandan m²-i ən sərfəli {items.length}-i göstərilir.
+          </p>
+        )}
+        {items && setAside > 0 && (
+          <p className="map-panel-note is-top">
+            {setAside} elan çıxarıldı: qiymət yerinə ilkin və ya aylıq ödəniş yazılıb.
           </p>
         )}
         {items === null

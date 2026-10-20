@@ -12,6 +12,7 @@ import "server-only";
 import { cacheLife } from "next/cache";
 import { BINA_CATEGORY, TIMEOUT_MS, USER_AGENT } from "./market";
 import type { Category } from "./query";
+import { instalments } from "./instalment";
 import { bestValue, byValue, manatPerSqm, meanPerSqm, type Value } from "./value";
 
 /** bina.az does not split markers any further than this. */
@@ -141,6 +142,8 @@ export interface ClusterPage {
   complete: boolean;
   /** mean price per m² of the listings read, in manat */
   average: { perSqm: number; count: number } | null;
+  /** listings left out as a down payment shown as the price */
+  setAside: number;
 }
 
 /** bina.az serves 25 per page, whatever is asked for. */
@@ -238,10 +241,19 @@ export async function getCluster(category: Category, clusterId: string): Promise
   const budget = total > CLUSTER_MAX ? Math.ceil(CLUSTER_MAX / CLUSTER_PAGE / count) : Infinity;
   const jobs = starts.map((from, i) => () => stretch(i === 0 ? null : from, starts[i + 1] ?? -Infinity, budget));
   const read = (await pool(jobs, IN_FLIGHT)).flat();
-  const items = [...new Map(read.map((p) => [p.id, p])).values()];
+  const all = [...new Map(read.map((p) => [p.id, p])).values()];
+  const sqm = (i: Preview) => manatPerSqm(i.price, i.currency, i.area);
+
+  // A down payment posing as the price would be the circle's best value and
+  // pull its mean down: suspects are measured against the circle's median.
+  const known = all.flatMap((i) => sqm(i) ?? []).sort((a, b) => a - b);
+  const median = known.length ? known[Math.floor(known.length / 2)] : null;
+  const setAside = median
+    ? await instalments(all.flatMap((i) => { const v = sqm(i); return v === null ? [] : [{ id: i.id, ratio: v / median, area: i.area }]; }), true)
+    : new Set<string>();
+  const items = all.filter((i) => !setAside.has(i.id));
 
   // The whole circle is one group: one listing in it is the best value.
-  const sqm = (i: Preview) => manatPerSqm(i.price, i.currency, i.area);
   const values = bestValue(items, () => clusterId, sqm);
   const ranked = items
     .map((item, order) => ({ ...item, value: values.get(item)!, order }))
@@ -254,6 +266,7 @@ export async function getCluster(category: Category, clusterId: string): Promise
     read: items.length,
     complete: !capped,
     average: meanPerSqm(items.map(sqm)),
+    setAside: setAside.size,
   };
 }
 

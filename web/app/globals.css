@@ -1434,6 +1434,19 @@ button {
   background: var(--good-soft);
 }
 
+.pill-warn {
+  background: var(--high-soft);
+  color: var(--high);
+}
+
+.value-warn {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--high-soft);
+  color: var(--high);
+  line-height: 1.5;
+}
+
 .detail-actions {
   display: flex;
   gap: 4px;

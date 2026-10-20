@@ -12,6 +12,7 @@ import { DetailSkeleton } from "@/components/Skeletons";
 import { compare, getDetail, type Detail } from "@/lib/detail";
 import { getMarket, type Market, type MarketRow } from "@/lib/market";
 import { marketKey, parseQuery, queryString, type Source } from "@/lib/query";
+import { SUSPECT_RATIO, implausible, saysInstalment } from "@/lib/instalment";
 import { valueLabel, type Value } from "@/lib/value";
 import { placeValues, searched } from "@/lib/view";
 
@@ -113,7 +114,21 @@ async function ListingView({ params, searchParams }: Props) {
   const values = placeValues(base);
   const peers = listing && market ? base.map((r) => r.listing).filter((l) => l.areaId === listing.areaId) : [];
   const group = listing ? (peers.some((l) => l.id === listing.id) ? peers : [...peers, listing]) : [];
-  const value: Value | null = listing && market ? placeValues(group.map((l) => ({ listing: l })))[listing.id] : null;
+  // A down payment shown as the price is not compared — the search has set it
+  // aside already; opened directly, it is told apart the same way.
+  // Measured against its place's median, sample included, when the ranking
+  // has one; otherwise against the place's listings in this search.
+  const around = peers.filter((l) => l.id !== listing?.id).map((l) => l.pricePerSqm).sort((a, b) => a - b);
+  const ratio =
+    ranked?.deviationPct != null
+      ? 1 + ranked.deviationPct / 100
+      : listing && around.length
+        ? listing.pricePerSqm / around[Math.floor(around.length / 2)]
+        : null;
+  const instalment =
+    ratio !== null && (implausible(ratio, listing?.area) || (ratio < SUSPECT_RATIO && saysInstalment(detail.description)));
+  const value: Value | null =
+    listing && market && !instalment ? placeValues(group.map((l) => ({ listing: l })))[listing.id] : null;
   const badge = value ? valueLabel(value) : null;
   const price = listing?.price ?? detail.price;
   const title = heading(detail, listing);
@@ -157,6 +172,7 @@ async function ListingView({ params, searchParams }: Props) {
             {title} · {money(price)}
           </h1>
           <p>
+            {instalment && <span className="pill pill-warn">Qiymət ilkin ödəniş ola bilər</span>}
             {badge && (
               <span className={`pill pill-${badge.tone}`}>
                 {badge.tone === "best" && <StarIcon size={12} />}
@@ -268,7 +284,13 @@ async function ListingView({ params, searchParams }: Props) {
         <aside className="detail-side">
           <section className="box value">
             <h2 className="box-title">HomeFinder qiymətləndirməsi</h2>
-            {listing && value ? (
+            {instalment && listing && ratio !== null ? (
+              <p className="box-note value-warn">
+                Bu elanın m² qiyməti {listing.areaName} üzrə tipik qiymətin {Math.round(ratio * 100)}%-i qədərdir
+                {saysInstalment(detail.description) ? ", açıqlamada isə ilkin və ya aylıq ödəniş yazılıb" : ""}. Görünən
+                rəqəm çox güman evin tam qiyməti deyil, ona görə bu elan müqayisə edilmir və siyahılarda göstərilmir.
+              </p>
+            ) : listing && value ? (
               <Valuation listing={listing} value={value} />
             ) : (
               <p className="box-note">

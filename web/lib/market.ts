@@ -14,6 +14,7 @@
 
 import "server-only";
 import { TIMEOUT_MS, USER_AGENT } from "./http";
+import { instalments } from "./instalment";
 import { locationIdsFor } from "./places";
 import { cacheLife } from "next/cache";
 import { parse, type HTMLElement, type Node } from "node-html-parser";
@@ -403,7 +404,7 @@ async function placeSamples(category: Category, places: Place[]): Promise<Listin
 
 /* ---------------- shared ---------------- */
 
-function finish(
+async function finish(
   cards: RawCard[],
   extras: Map<string, Extras>,
   source: Source,
@@ -413,7 +414,7 @@ function finish(
   postFilter: boolean,
   places: Map<string, Place>,
   pool: Listing[],
-): Market {
+): Promise<Market> {
   const read = scanCards(cards, {
     freshDays: FRESH_DAYS,
     site: siteFor(sourceUrl) ?? undefined,
@@ -422,7 +423,21 @@ function finish(
   const scan = { ...read, listings: read.listings.map((l) => placed(l, places.get(l.id))) };
   // Every listing read is kept: the badges compare each place within the
   // whole page, and a cut by the median ranking would hide a place's best.
-  const ranking = rank(scan, sourceUrl, { pool, maxRows: Infinity });
+  const first = rank(scan, sourceUrl, { pool, maxRows: Infinity });
+
+  // A down payment posing as the price would be its place's best value.
+  // Such listings are found against their place's median and set aside
+  // before anything is badged, and the page is ranked again without them.
+  const texts = new Map(cards.map((c) => [c.id, c.text]));
+  const setAside = await instalments(
+    first.rows.flatMap((r) =>
+      r.deviationPct === null ? [] : [{ id: r.listing.id, ratio: 1 + r.deviationPct / 100, area: r.listing.area, text: texts.get(r.listing.id) }],
+    ),
+    source === "bina",
+  );
+  const ranking = setAside.size
+    ? rank({ ...scan, listings: scan.listings.filter((l) => !setAside.has(l.id)) }, sourceUrl, { pool, maxRows: Infinity })
+    : first;
   const order = new Map(cards.map((card, i) => [card.id, i]));
   return {
     source,
@@ -434,7 +449,7 @@ function finish(
       extras: extras.get(row.listing.id) ?? { photo: null },
       order: order.get(row.listing.id) ?? cards.length,
     })),
-    coverage: coverageParts(ranking),
+    coverage: setAside.size ? [...coverageParts(ranking), `${setAside.size} ilkin ödənişli elan çıxarıldı`] : coverageParts(ranking),
     total,
     sourceUrl,
     at: ranking.at,

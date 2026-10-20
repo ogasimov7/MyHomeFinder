@@ -26,6 +26,7 @@ const RULES = [
   ["Sumqayıt və Abşeron", "elanları öz səhifəsi ilə müqayisə olunur və kartda “Bakıdan kənar” etiketi ilə göstərilir."],
   ["Dollarla verilən qiymətlər", "1.70 məzənnəsi ilə manata çevrilir və kartda “USD → AZN” qeydi olur."],
   ["Torpaq, qaraj, ofis", "kartları mənzil sayılmır. Mənzil və həyət evi bir-biri ilə müqayisə olunmur."],
+  ["Qiymət yerinə ilkin ödəniş yazılan elanlar", "m² qiyməti öz yerindən çox aşağıdırsa və açıqlamada ilkin və ya aylıq ödəniş yazılıbsa, siyahıdan çıxarılır — əks halda saxta “ən sərfəli” olardı."],
   ["5 gündən köhnə elanlar", "sıralamaya düşmür, çünki bir aylıq qiymət bugünkü bazar haqqında az şey deyir."],
 ];
 
